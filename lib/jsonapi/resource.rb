@@ -175,7 +175,7 @@ module JSONAPI
       @preloaded_fragments ||= Hash.new
     end
 
-    def call_custom_action(name, data = nil)
+    def call_custom_action(name, data = {})
       result = nil
       custom_action = self.class._custom_actions[name]
       return result unless custom_action
