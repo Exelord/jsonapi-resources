@@ -281,11 +281,25 @@ module JSONAPI
           _resource_klass.instance_exec(records, value, options, &strategy)
         end
       else
+        relation = _resource_klass._relationships[filter]
+
         if _resource_klass._relationships.include?(filter)
-          if _resource_klass._relationships[filter].belongs_to?
-            records.where(_resource_klass._relationships[filter].foreign_key => value)
+          if relation.belongs_to?
+            if relation.polymorphic?
+              id, klass_name = value
+
+              relation_type = begin
+                relation.parent_resource.model_name_for_type(klass_name)
+              rescue NameError
+                nil
+              end
+
+              records.where("#{relation.foreign_key}": id, "#{relation.polymorphic_type}" => relation_type)
+            else
+              records.where(relation.foreign_key => value)
+            end
           else
-            records.where("#{_resource_klass._relationships[filter].table_name}.#{_resource_klass._relationships[filter].primary_key}" => value)
+            records.where("#{relation.table_name}.#{relation.primary_key}" => value)
           end
         else
           filter = _resource_klass._attribute_delegated_name(filter)
